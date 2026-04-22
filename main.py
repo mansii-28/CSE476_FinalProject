@@ -1,5 +1,12 @@
 """
 main.py — Entry point for the inference-time reasoning agent.
+
+Usage:
+    python main.py --data data/dev_data.json --output outputs/results.json
+    python main.py --data data/test_data.json --output outputs/test_results.json --mode test
+    python main.py --data data/dev_data.json --limit 50              # quick debug run
+    python main.py --data data/dev_data.json --domain math           # single domain only
+    python main.py --data data/dev_data.json --resume outputs/results.json  # skip already-done
 """
 
 import argparse
