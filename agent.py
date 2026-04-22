@@ -3,13 +3,6 @@ agent.py — Core agent that routes questions to the right inference-time techni
 
 Each domain maps to one or more techniques. The agent's solve() method is the
 single entry point called by main.py for every instance.
-
-Domain → likely technique mapping (to be implemented):
-    math              → chain_of_thought, self_consistency, decomposition
-    common_sense      → chain_of_thought, least_to_most
-    coding            → chain_of_thought, self_refine
-    planning          → tree_of_thought, decomposition
-    future_prediction → react, tool_augmented
 """
 
 from techniques.cot             import run_cot
