@@ -10,3 +10,4 @@ To leave venv, run "deactivate"
 
 pytests is used to run tests on individual techniques.
 Usage example: "pytest unittests/test_cot.py -v"
+Or run all tests with "pytest unittests/ -v"
