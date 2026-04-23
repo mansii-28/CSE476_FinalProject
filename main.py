@@ -21,6 +21,7 @@ import os
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -78,8 +79,8 @@ def run(
     data: list[dict],
     mode: str = "dev",
     sleep_between: float = 0.3,
-    domain_filter: str | None = None,
-    existing: dict[int, dict] | None = None,
+    domain_filter: Optional[str] = None,
+    existing: Optional[dict[int, dict]] = None,
 ) -> list[dict]:
     """
     Iterate over instances and call the agent on each one.

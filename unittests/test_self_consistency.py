@@ -1,3 +1,4 @@
+# test self consistency technique
 #usage: pytest unittests/test_self_consistency.py -v
 from techniques.self_consistency import run_self_consistency
 

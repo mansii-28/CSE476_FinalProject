@@ -12,6 +12,7 @@ from techniques.self_refine     import run_self_refine
 from techniques.react           import run_react
 from techniques.decomposition   import run_decomposition
 from techniques.least_to_most   import run_least_to_most
+from techniques.tool_reasoning  import run_tool_reasoning
 
 
 class Agent:
@@ -30,8 +31,22 @@ class Agent:
 
         technique_name is logged by main.py for the domain summary report.
         """
-        # TODO: implement routing logic based on domain and question content
-        # For now, falls through to chain-of-thought as a safe default
+        # Simple routing logic based on domain
+        if domain == "math":
+            return self._tool_reasoning(question)
+        elif domain == "common_sense":
+            # Maps to least_to_most based on original comment
+            return self._least_to_most(question)
+        elif domain == "future_prediction":
+            # Maps to react based on original comment
+            return self._react(question)
+        elif domain == "coding":
+            return self._self_refine(question)
+        elif domain == "planning":
+            return self._tree_of_thought(question)
+            
+
+        # Fallback to chain-of-thought
         return self._chain_of_thought(question)
 
     # ---------------------------------------------------------------------------
@@ -78,6 +93,14 @@ class Agent:
         """
         prediction = run_react(question)
         return prediction, "react"
+
+    def _tool_reasoning(self, question: str) -> tuple[str, str]:
+        """
+        Simpler formulation that can use tools. 
+        Best for: questions mostly solvable but maybe needing a quick calculation or fact check.
+        """
+        prediction = run_tool_reasoning(question)
+        return prediction, "tool_reasoning"
 
     def _decomposition(self, question: str) -> tuple[str, str]:
         """

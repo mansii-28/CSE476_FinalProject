@@ -1,5 +1,6 @@
 # techniques/self_refine.py
 from api import call_model
+from techniques.cot import extract_final_answer
 
 def run_self_refine(question: str, max_iterations: int = 2) -> str:
     # Step 1 — initial answer (same as CoT)
@@ -37,7 +38,4 @@ def run_self_refine(question: str, max_iterations: int = 2) -> str:
         answer = critique["text"]
 
     # Extract final answer
-    marker = "FINAL ANSWER:"
-    if marker in answer:
-        return answer.split(marker)[-1].strip()
-    return answer.strip()
+    return extract_final_answer(answer)

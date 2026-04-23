@@ -1,3 +1,4 @@
+# test self refine technique
 #usage: pytest unittests/test_self_refine.py -v
 from techniques.self_refine import run_self_refine
 
