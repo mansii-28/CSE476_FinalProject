@@ -3,16 +3,22 @@ main.py — Entry point for the inference-time reasoning agent.
 
 Usage:
     python main.py --data data/dev_data.json --output outputs/results.json
-    python main.py --data data/test_data.json --output outputs/test_results.json --mode test
+    python main.py --data data/dev_data.json --output outputs/results.json --mode dev
     python main.py --data data/dev_data.json --limit 50              # quick debug run
     python main.py --data data/dev_data.json --domain math           # single domain only
     python main.py --data data/dev_data.json --resume outputs/results.json  # skip already-done
 
-Date JSON format:
+Dev data schema (1,000 instances):
     {"input": str, "output": str, "domain": str}
     domains: math (300), common_sense (400), coding (100),
              planning (100), future_prediction (100)
-Note: test data will NOT have an "output" key.
+
+Test data schema (6,208 instances):
+    {"input": str}
+    NOTE: no "output" or "domain" fields — agent auto-detects domain.
+
+For final submission use generate_answers.py, which produces the
+exact format required by the autograder.
 """
 
 import argparse
@@ -40,15 +46,21 @@ KNOWN_DOMAINS = {"math", "common_sense", "coding", "planning", "future_predictio
 def load_data(path: str) -> list[dict]:
     """Load dev or test data from a JSON file.
 
-    Real schema: [{"input": "...", "output": "...", "domain": "..."}, ...]
-    The "output" key is absent in released test data.
+    Dev schema:  [{"input": "...", "output": "...", "domain": "..."}, ...]
+    Test schema: [{"input": "..."}, ...]   (no output or domain)
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    domain_counts = Counter(d.get("domain", "unknown") for d in data)
-    print(f"[main] Loaded {len(data)} instances from {path}")
-    print(f"[main] Domain breakdown: { {k: domain_counts[k] for k in sorted(domain_counts)} }")
+    has_domain = any("domain" in d for d in data)
+    if has_domain:
+        domain_counts = Counter(d.get("domain", "unknown") for d in data)
+        print(f"[main] Loaded {len(data)} instances from {path}")
+        print(f"[main] Domain breakdown: { {k: domain_counts[k] for k in sorted(domain_counts)} }")
+    else:
+        print(f"[main] Loaded {len(data)} instances from {path}")
+        print(f"[main] No domain field detected — agent will auto-detect domain per question.")
+
     return data
 
 
@@ -88,9 +100,9 @@ def run(
     Returns a list of result dicts:
         {
             "id":             int,
-            "domain":         str,
+            "domain":         str,       # "unknown" if not in data, agent detects internally
             "input":          str,
-            "expected":       str | None,   # None in test mode
+            "expected":       str | None,
             "prediction":     str,
             "technique_used": str,
             "elapsed_sec":    float,
@@ -99,7 +111,7 @@ def run(
     """
     agent = Agent()
     existing = existing or {}
-    results = list(existing.values())  # carry forward any resumed results
+    results = list(existing.values())
 
     to_run = [
         (i, inst) for i, inst in enumerate(data)
@@ -112,13 +124,12 @@ def run(
 
     skipped = len(data) - len(to_run) - len(existing)
     if skipped > 0:
-        print(f"[main] Skipping {skipped} instances (domain filter).")
+        print(f"[main] Skipping {skipped} instances (domain filter or already done).")
 
     for idx, (i, instance) in enumerate(to_run):
         question = instance.get("input", "")
-        domain   = instance.get("domain", "unknown")
-        expected = instance.get("output")          # key is "output", not "expected_output"
-                                                   # will be None for test data
+        domain   = instance.get("domain", "unknown")   # "unknown" for test data — agent detects
+        expected = instance.get("output")              # None for test data
 
         print(f"[{idx+1}/{len(to_run)}] id={i} domain={domain!r}  {question[:80]!r}...")
 
@@ -149,7 +160,6 @@ def run(
         if sleep_between > 0:
             time.sleep(sleep_between)
 
-    # Always return sorted by id so the output file is stable
     results.sort(key=lambda r: r["id"])
     return results
 
@@ -206,7 +216,7 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         choices=sorted(KNOWN_DOMAINS),
-        help="Only run instances from this domain (useful for targeted debugging).",
+        help="Only run instances from this domain (dev data only).",
     )
     parser.add_argument(
         "--limit",
@@ -233,7 +243,6 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    # Validate API key
     api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key or api_key == "CREATE FROM Voyager Portal":
         raise EnvironmentError(
@@ -242,10 +251,8 @@ def main() -> None:
             "  export OPENAI_API_KEY=your_key_here"
         )
 
-    # Load data
     data = load_data(args.data)
 
-    # Apply --limit BEFORE passing to run(), after any domain filter
     if args.domain:
         filtered = [d for d in data if d.get("domain") == args.domain]
     else:
@@ -255,8 +262,6 @@ def main() -> None:
         filtered = filtered[: args.limit]
         print(f"[main] Limiting to first {args.limit} instances (after domain filter).")
 
-    # Re-index so ids match original positions in full data
-    # (we use enumerate index from full data inside run(), so pass full data + let run filter)
     existing = load_existing_results(args.resume) if args.resume else {}
 
     print(f"\n[main] Starting agent in '{args.mode}' mode on {len(filtered)} instances...\n")
@@ -269,13 +274,9 @@ def main() -> None:
         existing      = existing,
     )
 
-    # Save results
     save_results(results, args.output)
-
-    # Per-domain technique breakdown
     print_domain_summary(results)
 
-    # Evaluate accuracy (dev mode only)
     if args.mode == "dev":
         print("[main] Running evaluation...\n")
         evaluate_results(results)

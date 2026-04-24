@@ -2,17 +2,25 @@
 agent.py — Core agent that routes questions to the right inference-time technique.
 
 Each domain maps to one or more techniques. The agent's solve() method is the
-single entry point called by main.py for every instance.
+single entry point called by main.py and generate_answers.py for every instance.
+
+Domain → technique mapping:
+    math              → tool_reasoning
+    common_sense      → least_to_most
+    future_prediction → react
+    coding            → self_refine
+    planning          → tree_of_thought
+    unknown           → detected via _detect_domain(), then routed above
 """
 
-from techniques.cot             import run_cot
+from techniques.cot              import run_cot
 from techniques.self_consistency import run_self_consistency
-from techniques.tot             import run_tot
-from techniques.self_refine     import run_self_refine
-from techniques.react           import run_react
-from techniques.decomposition   import run_decomposition
-from techniques.least_to_most   import run_least_to_most
-from techniques.tool_reasoning  import run_tool_reasoning
+from techniques.tot              import run_tot
+from techniques.self_refine      import run_self_refine
+from techniques.react            import run_react
+from techniques.decomposition    import run_decomposition
+from techniques.least_to_most    import run_least_to_most
+from techniques.tool_reasoning   import run_tool_reasoning
 
 
 class Agent:
@@ -22,6 +30,7 @@ class Agent:
     Usage:
         agent = Agent()
         prediction, technique_name = agent.solve(question, domain="math")
+        prediction, technique_name = agent.solve(question)  # auto-detects domain
     """
 
     def solve(self, question: str, domain: str = "unknown") -> tuple[str, str]:
@@ -29,29 +38,74 @@ class Agent:
         Route a question to the appropriate technique and return:
             (prediction, technique_name)
 
-        technique_name is logged by main.py for the domain summary report.
+        If domain is "unknown" (e.g. test data has no domain field),
+        _detect_domain() infers it from the question text.
         """
-        # Simple routing logic based on domain
+        if domain == "unknown" or not domain:
+            domain = self._detect_domain(question)
+
         if domain == "math":
             return self._tool_reasoning(question)
         elif domain == "common_sense":
-            # Maps to least_to_most based on original comment
             return self._least_to_most(question)
         elif domain == "future_prediction":
-            # Maps to react based on original comment
             return self._react(question)
         elif domain == "coding":
             return self._self_refine(question)
         elif domain == "planning":
             return self._tree_of_thought(question)
-            
 
-        # Fallback to chain-of-thought
+        # Final fallback
         return self._chain_of_thought(question)
 
     # ---------------------------------------------------------------------------
-    # One private method per technique — each wraps the imported function and
-    # returns (prediction, technique_name) so solve() always has a uniform return.
+    # Domain detector — used when test data has no "domain" field
+    # ---------------------------------------------------------------------------
+
+    def _detect_domain(self, question: str) -> str:
+        """
+        Heuristically infer domain from question text.
+        Called automatically when domain="unknown".
+        """
+        q = question.lower()
+
+        # Coding — function/code keywords
+        if any(w in q for w in [
+            "def ", "function", "implement", "algorithm", "class ",
+            "return ", "code", "write a program", "write a function",
+            "bug", "syntax", "compile", "runtime",
+        ]):
+            return "coding"
+
+        # Planning — action/sequence/arrangement keywords
+        if any(w in q for w in [
+            "stack", "block", "move", "step", "plan", "sequence",
+            "arrange", "order the", "sort the", "schedule",
+            "first then", "before", "after",
+        ]):
+            return "planning"
+
+        # Math — numeric calculation keywords
+        if any(w in q for w in [
+            "calculate", "compute", "solve", "equation", "percent", "%",
+            "profit", "loss", "average", "sum of", "how many", "total",
+            "how much", "price", "cost", "rate", "ratio", "probability",
+            "multiply", "divide", "subtract", "add ", "integer", "prime",
+        ]):
+            return "math"
+
+        # Future prediction — forecasting/estimation keywords
+        if any(w in q for w in [
+            "predict", "forecast", "will happen", "future", "estimate",
+            "likely to", "next year", "by 2", "trend",
+        ]):
+            return "future_prediction"
+
+        # Default — common sense covers most factual/trivia/multiple choice
+        return "common_sense"
+
+    # ---------------------------------------------------------------------------
+    # One private method per technique
     # ---------------------------------------------------------------------------
 
     def _chain_of_thought(self, question: str) -> tuple[str, str]:
@@ -96,7 +150,7 @@ class Agent:
 
     def _tool_reasoning(self, question: str) -> tuple[str, str]:
         """
-        Simpler formulation that can use tools. 
+        Simpler formulation that can use tools.
         Best for: questions mostly solvable but maybe needing a quick calculation or fact check.
         """
         prediction = run_tool_reasoning(question)
