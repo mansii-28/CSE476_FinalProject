@@ -23,7 +23,7 @@ import os
 import time
 from pathlib import Path
 
-from dotenv import load_dotenv
+from typing import Optional
 from agent import Agent
 
 load_dotenv()
@@ -84,7 +84,7 @@ def validate(questions: list[dict], answers: list[dict]) -> None:
 # Main loop
 # ---------------------------------------------------------------------------
 
-def run(questions: list[dict], limit: int | None, resume: bool, sleep: float) -> list[str]:
+def run(questions: list[dict], limit: Optional[int], resume: bool, sleep: float) -> list[str]:
     """
     Call the agent on every question and return a list of answer strings
     in the same order as the input.
