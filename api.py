@@ -13,7 +13,10 @@ Environment variables (set in .env or shell):
 import os
 import time
 import requests
+import urllib3
 from dotenv import load_dotenv
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
 
@@ -78,7 +81,7 @@ def call_model(
     last_error = None
     for attempt in range(1, retries + 1):
         try:
-            resp   = requests.post(_ENDPOINT, headers=headers, json=payload, timeout=timeout)
+            resp   = requests.post(_ENDPOINT, headers=headers, json=payload, timeout=timeout, verify=False)
             status = resp.status_code
 
             if status == 200:
@@ -154,7 +157,7 @@ def call_model_messages(
     last_error = None
     for attempt in range(1, retries + 1):
         try:
-            resp   = requests.post(_ENDPOINT, headers=headers, json=payload, timeout=timeout)
+            resp   = requests.post(_ENDPOINT, headers=headers, json=payload, timeout=timeout, verify=False)
             status = resp.status_code
 
             if status == 200:
