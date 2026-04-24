@@ -28,7 +28,7 @@ from agent import Agent
 
 load_dotenv()
 
-INPUT_PATH      = Path("data/cse_476_final_project_test_data.json")
+INPUT_PATH      = Path("data/test_data.json")
 OUTPUT_PATH     = Path("outputs/cse_476_final_project_answers.json")
 CHECKPOINT_PATH = Path("outputs/cse_476_answers_checkpoint.json")
 MAX_CHARS       = 4999
