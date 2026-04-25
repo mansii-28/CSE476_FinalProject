@@ -13,7 +13,7 @@ __pycache__/
 .pytest_cache/
 
 # outputs (too large to commit, regenerate with main.py)
-outputs/
+# outputs/
 
 # OS junk
 .DS_Store
