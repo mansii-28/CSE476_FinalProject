@@ -21,10 +21,11 @@ def self_evaluate(question: str, prediction: str, expected_answer: str) -> bool:
         return False
         
     # Basic string fallback if the model doesn't say true or false
-    pred_clean = str(prediction).lower().strip()
-    exp_clean = str(expected_answer).lower().strip()
+    from utils import normalize_answer
+    pred_clean = normalize_answer(prediction)
+    exp_clean = normalize_answer(expected_answer)
     
-    if exp_clean in pred_clean:
+    if exp_clean and exp_clean == pred_clean:
         return True
         
     return False

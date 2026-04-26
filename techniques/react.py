@@ -1,7 +1,7 @@
 from api import call_model_messages
 from tools.calculator import calculator
 from tools.search import search
-import json
+from utils import extract_tool_json
 
 TOOLS = {
     "calculator": calculator,
@@ -48,32 +48,22 @@ def run_react(question: str, max_steps: int = 5) -> str:
         action = None
         action_input = None
         
-        lines = reply.split('\n')
-        if '{' in reply:
-            try:
-                start = reply.find('{')
-                end = reply.find('}') + 1
+        data_tool = extract_tool_json(reply)
+        if data_tool:
+            tool_name = data_tool.get("action")
+            tool_args = data_tool.get("action_input")
 
-                str_json  = reply[start:end]
-                data_tool = json.loads(str_json)
-
-                tool_name = data_tool.get("action")
-                tool_args = data_tool.get("action_input")
-
-                if tool_name == "finish":
-                    break
-
-                if tool_name in TOOLS:
-                    obs = TOOLS[tool_name](tool_args)
-                else:
-                    obs = f"Error: Tool '{tool_name}' not recognized."
-                    
-                obs_msg = f"Observation: {obs}"
-                messages.append({"role": "user", "content": obs_msg})
-                trace += f"\n{obs_msg}"
-            except Exception as e:
-                trace += f"\nError parsing tool call: {e}"
+            if tool_name == "finish":
                 break
+
+            if tool_name in TOOLS:
+                obs = TOOLS[tool_name](tool_args)
+            else:
+                obs = f"Error: Tool '{tool_name}' not recognized."
+                
+            obs_msg = f"Observation: {obs}"
+            messages.append({"role": "user", "content": obs_msg})
+            trace += f"\n{obs_msg}"
         else:
             trace += "\nFinal answer assumed since no tool call was detected."
             break
