@@ -12,5 +12,20 @@ def search(query: str) -> str:
     query = query.lower()
     if query in fact_dict:
         return fact_dict[query]
-    else:
-        return "No result found in the fact dictionary."
+
+    words_in_query = set(query.split())
+    max_overlap_count = 0
+    matched_best_key = None
+
+    for key in fact_dict:
+        words_in_key = set(key.split())
+        overlap = len(words_in_query.intersection(words_in_key))
+
+        if overlap > max_overlap_count:
+            max_overlap_count = overlap
+            matched_best_key = key
+
+    if max_overlap_count >= 2:
+        return fact_dict[matched_best_key]
+            
+    return "Could not find answer. Try rephrasing."
