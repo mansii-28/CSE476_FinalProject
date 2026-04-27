@@ -54,6 +54,8 @@ class Agent:
             return self._self_refine(question)
         elif domain == "planning":
             return self._tree_of_thought(question)
+        elif domain == "factual":
+            return self._tool_reasoning(question)
 
         # Final fallback
         return self._chain_of_thought(question)
@@ -100,6 +102,13 @@ class Agent:
             "likely to", "next year", "by 2", "trend",
         ]):
             return "future_prediction"
+
+        # Factual questions
+        if any(w in q for w in [
+            "when", "who", "where", "population",
+            "price", "president", "capital"
+        ]):
+            return "factual"
 
         # Default — common sense covers most factual/trivia/multiple choice
         return "common_sense"

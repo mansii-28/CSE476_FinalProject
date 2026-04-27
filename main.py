@@ -36,7 +36,7 @@ from evaluate import evaluate_results
 
 load_dotenv()
 
-KNOWN_DOMAINS = {"math", "common_sense", "coding", "planning", "future_prediction"}
+KNOWN_DOMAINS = {"math", "common_sense", "coding", "planning", "future_prediction", "factual"}
 
 
 # ---------------------------------------------------------------------------
