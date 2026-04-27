@@ -5,7 +5,7 @@ Each domain maps to one or more techniques. The agent's solve() method is the
 single entry point called by main.py and generate_answers.py for every instance.
 
 Domain → technique mapping:
-    math              → tool_reasoning
+    math              → self_consistency
     common_sense      → least_to_most
     future_prediction → react
     coding            → self_refine
