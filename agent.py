@@ -45,7 +45,7 @@ class Agent:
             domain = self._detect_domain(question)
 
         if domain == "math":
-            return self._tool_reasoning(question)
+            return self._self_consistency(question)
         elif domain == "common_sense":
             return self._least_to_most(question)
         elif domain == "future_prediction":
