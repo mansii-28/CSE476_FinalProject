@@ -28,4 +28,4 @@ def search(query: str) -> str:
     if max_overlap_count >= 2:
         return fact_dict[matched_best_key]
             
-    return "Could not find answer. Try rephrasing."
+    return "Fact could not be found."
